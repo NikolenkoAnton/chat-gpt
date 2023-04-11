@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Знаходження найближчого магазину за назвою товару та локацією</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <style>
+    #mapid {
+      height: 400px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Знаходження найближчого магазину за назвою товару та локацією</h1>
+  <form>
+    <label for="product">Назва товару:</label><br>
+    <input type="text" id="product" name="product" value=""><br>
+    <label for="location">Локація (вінницька вулиця):</label><br>
+    <input type="text" id="location" name="location" value=""><br>
+    <input type="submit" value="Знайти найближчий магазин">
+  </form>
+  <div id="result"></div>
+  <div id="mapid"></div>
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script>
+    function findNearestShop(product, location) {
+      // Створюємо карту та додаємо до неї шари
+      var mymap = L.map('mapid').setView([49.2328, 28.4682], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+      }).addTo(mymap);
+
+      // Запит до бази даних OpenStreetMap за магазинами, що продають товар з вказаною назвою
+      var url = 'https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(product) + '&format=json&addressdetails=1&limit=5';
+      var shops = [];
+      fetch(url).then(function(response) {
+        return response.json();
+      }).then(function(data) {
+        data.forEach(function(shop) {
+          // Додаємо координати кожного магазину до списку
+          shops.push([shop.address.shop, shop.lat, shop.lon]);
+        });
+
+        // Знаходимо найближчий магазин до вказаної локації
+        var nearestShop = null;
+        var nearestDistance = Infinity;
+        shops.forEach(function(shop) {
+          var distance = Math.sqrt(Math.pow(location[0] - shop[1], 2) + Math.pow(location[1] - shop[2], 2));
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestShop = shop;
+          }
